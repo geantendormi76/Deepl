@@ -1,0 +1,16 @@
+# 忽略所有Python缓存
+__pycache__/
+*.pyc
+
+# 忽略所有训练产出物
+/saved/
+/runs/
+/models/
+
+# 忽略所有数据集
+/data/raw/yolo_v1/
+
+# 忽略IDE和系统文件
+.idea/
+.vscode/
+*.DS_Store

@@ -1,0 +1,36 @@
+# 文件: configs/yolo/main_config.yaml (最终路径修正版)
+# 职责: 定义YOLO定位器的训练超参数
+
+# --- 训练设置 ---
+# 【核心修正】模型路径指向您项目中的 models/ 目录
+model: /home/zhz/deepl/models/yolo11n.pt 
+data: /home/zhz/deepl/data/processed/locator_dataset/dataset.yaml # 这个路径会在数据准备阶段自动创建和验证
+epochs: 100
+patience: 20
+batch: 16
+imgsz: 640
+device: 0
+workers: 8
+project: /home/zhz/deepl/runs/detect
+name: locator_v1
+exist_ok: True
+
+# --- 优化器与学习率 ---
+optimizer: auto
+lr0: 0.01
+lrf: 0.01
+momentum: 0.937
+weight_decay: 0.0005
+warmup_epochs: 3.0
+
+# --- 损失函数权重 ---
+box: 7.5
+cls: 0.5
+dfl: 1.5
+
+# --- 数据增强 ---
+degrees: 10.0
+translate: 0.1
+scale: 0.2
+fliplr: 0.5
+mosaic: 0.5
