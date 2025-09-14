@@ -45,11 +45,11 @@ class Trainer:
             target_name = "yolo_v1_pure_gpu.onnx"
             export_params = {
                 'format': 'onnx',
-                'opset': 13,
-                'simplify': False,
-                'nms': False,
-                'dynamic': False,
-                'batch': 1,
+                'opset': 13,         
+                'simplify': True,   
+                'nms': False,       
+                'dynamic': False,     
+                'batch': 1,          
                 'imgsz': self.yolo_config.get('imgsz', 640)
             }
         elif task_type == 'classify':

@@ -5,7 +5,7 @@
 # 【核心修正】模型路径指向您项目中的 models/ 目录
 model: /home/zhz/deepl/models/yolo11n.pt 
 data: /home/zhz/deepl/data/processed/locator_dataset/dataset.yaml # 这个路径会在数据准备阶段自动创建和验证
-epochs: 100
+epochs: 180
 patience: 20
 batch: 16
 imgsz: 640
