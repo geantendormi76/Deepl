@@ -3,7 +3,7 @@
   "n_gpu": 1,
   "tasks": {
     "detector": {
-        "description": "训练YOLOv8实体检测器 (来自真实数据)",
+        "description": "训练YOLO11实体检测器 (来自真实数据)",
         "yolo_config_path": "main_config.yaml",
         "data_builder_module": "data_loader.detector_loader",
         "data_builder_func": "build_yolo_dataset"
