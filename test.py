@@ -14,7 +14,7 @@ import random
 MODEL_PATH = Path("saved/models/yolo_v1.onnx")
 
 # 指向数据准备阶段生成的 dataset.yaml 文件，以找到验证集和类别名
-DATASET_YAML_PATH = Path("data/processed/finetune_v2_input/dataset.yaml") 
+DATASET_YAML_PATH = Path("data/processed/synthetic_locator_dataset/dataset.yaml") 
 
 # 在此目录中查看您模型的“答卷”
 OUTPUT_DIR = Path("validation_results")
