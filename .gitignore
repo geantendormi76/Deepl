@@ -6,6 +6,9 @@ __pycache__/
 /saved/
 /runs/
 /models/
+/data/
+/tests/
+
 
 # 忽略所有数据集
 /data/raw/yolo_v1/
