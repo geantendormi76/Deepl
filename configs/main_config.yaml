@@ -3,21 +3,21 @@
 
 # --- 训练设置 ---
 # 【核心修正】模型路径指向您项目中的 models/ 目录
-model: /home/zhz/deepl/runs/detect/locator_v1/weights/best.pt
-data: /home/zhz/deepl/data/processed/finetune_v2_input/dataset.yaml # 这个路径会在数据准备阶段自动创建和验证
-epochs: 30
-patience: 10
+model: /home/zhz/deepl/models/yolo11n.pt
+data: /home/zhz/deepl/data/processed/synthetic_locator_dataset/dataset.yaml # 这个路径会在数据准备阶段自动创建和验证
+epochs: 100
+patience: 20
 batch: 16
 imgsz: 640
 device: 0
 workers: 8
 project: /home/zhz/deepl/runs/detect
-name: locator_v2
+name: locator_synthetic_v1
 exist_ok: True
 
 # --- 优化器与学习率 ---
 optimizer: auto
-lr0: 0.01
+lr0: 0.01 
 lrf: 0.01
 momentum: 0.937
 weight_decay: 0.0005

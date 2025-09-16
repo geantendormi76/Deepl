@@ -15,24 +15,24 @@ TRAINING_PREFIXES = ('1-unit-', '2-status-', '3-item-', '4-ui-', '5-skill-')
 def _load_and_parse_classes() -> List[str]:
     """
     从权威的 labelme_config.txt 读取所有类别，并根据 TRAINING_PREFIXES 进行筛选和解析。
+    【核心修正】使用列表代替集合，以保证类别顺序与文件中的定义完全一致。
     """
     if not LABELME_CONFIG_PATH.exists():
         raise FileNotFoundError(f"错误: 权威类别配置文件未找到于 {LABELME_CONFIG_PATH}")
 
-    training_classes = set()
+    training_classes = []  # <--- 改为列表
     with open(LABELME_CONFIG_PATH, 'r', encoding='utf-8') as f:
         for line in f:
             line = line.strip()
             if not line or line.startswith('#'):
                 continue
             
-            # 检查这一行是否是我们想要训练的类别
             if line.startswith(TRAINING_PREFIXES):
-                # 从 '1-unit-enemy-mob-大海龟' 解析出 '大海龟'
                 specific_name = line.rsplit('-', 1)[-1]
-                training_classes.add(specific_name)
+                if specific_name not in training_classes: 
+                    training_classes.append(specific_name)
 
-    return sorted(list(training_classes))
+    return training_classes 
 
 # --- 执行加载并生成核心常量 ---
 TRAINING_CLASSES: List[str] = _load_and_parse_classes()
