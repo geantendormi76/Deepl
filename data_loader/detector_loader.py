@@ -1,4 +1,4 @@
-# 文件: data_loader/detection_dataset_builder.py (适配版)
+# 文件: data_loader/detector_loader.py (V2 - 翻译规则对齐版)
 import sys
 import json
 import shutil
@@ -15,20 +15,16 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from utils.constants import CLASS_TO_ID, ID_TO_CLASS
 
 def build_yolo_dataset(config: Dict):
-    """
-    转换LabelMe标注为YOLOv8格式并自动划分数据集。
-    :param config: 从主config.json加载的完整配置字典。
-    """
+    # ... (函数上半部分保持不变) ...
     data_paths = config['data_paths']
     source_dir = Path(data_paths['detector_source_dir'])
     output_dir = Path(data_paths['detector_output_dir'])
-    val_split_ratio = 0.2 # 可以硬编码或从配置中读取
+    val_split_ratio = 0.2
 
     print(f"--- [数据构建] 开始处理源数据: {source_dir} ---")
     
     if not source_dir.is_dir():
         print(f"⚠️ 警告: 源数据目录 {source_dir} 不存在，跳过数据准备。")
-        print("   请将LabelMe标注文件放入该目录。")
         return
 
     if output_dir.exists():
@@ -44,15 +40,22 @@ def build_yolo_dataset(config: Dict):
         print(f"❌ 错误: 在 {source_dir} 中未找到任何 .json 文件。")
         return
 
-    train_files, val_files = train_test_split(json_files, test_size=val_split_ratio, random_state=42)
+    # 确保即使文件少于5个也能正确划分
+    if len(json_files) < 5:
+        train_files, val_files = json_files, []
+    else:
+        train_files, val_files = train_test_split(json_files, test_size=val_split_ratio, random_state=42)
+    
     print(f"数据集划分完成: {len(train_files)} 训练, {len(val_files)} 验证。")
 
     for split_name, file_list in [("train", train_files), ("val", val_files)]:
+        if not file_list: continue # 如果某个集合为空，则跳过
         for json_path in tqdm(file_list, desc=f"转换 {split_name} 集"):
             image_path = None
             for ext in ['.png', '.jpg', '.jpeg']:
-                if json_path.with_suffix(ext).exists():
-                    image_path = json_path.with_suffix(ext)
+                potential_path = json_path.with_suffix(ext)
+                if potential_path.exists():
+                    image_path = potential_path
                     break
             
             if image_path is None: continue
@@ -65,10 +68,8 @@ def build_yolo_dataset(config: Dict):
                 f.write("\n".join(yolo_labels))
                 
     dataset_yaml_data = {
-        'path': str(output_dir.resolve()),
-        'train': 'images/train',
-        'val': 'images/val',
-        'names': ID_TO_CLASS
+        'path': str(output_dir.resolve()), 'train': 'images/train',
+        'val': 'images/val', 'names': ID_TO_CLASS
     }
     dataset_yaml_path = output_dir / "dataset.yaml"
     with open(dataset_yaml_path, 'w', encoding='utf-8') as f:
@@ -84,12 +85,14 @@ def convert_single_json_to_yolo(json_path: Path, class_mapping: dict) -> List[st
     yolo_labels = []
     for shape in data['shapes']:
         label_with_prefix = shape['label']
-        if '-' in label_with_prefix:
-            label = label_with_prefix.split('-', 1)[1]
-        else:
-            label = label_with_prefix
+        
+        # 【核心修正】使用与 constants.py 完全相同的解析规则！
+        # e.g., '1-unit-enemy-mob-大海龟' -> '大海龟'
+        label = label_with_prefix.rsplit('-', 1)[-1]
             
-        if label not in class_mapping: continue
+        if label not in class_mapping:
+            # print(f"警告: 在 {json_path.name} 中找到未知标签 '{label}'，已跳过。")
+            continue
         
         class_id = class_mapping[label]
         points = np.array(shape['points'])

@@ -1,36 +1,27 @@
-# 文件: train.py (最终版 - 适配简化命名)
+# 文件: train.py (V3 - 优雅架构最终版)
 import argparse
 import json
 from pathlib import Path
-import importlib
 
-# 【核心修正】导入语句已根据您的命名偏好简化
+# 【核心】我们在这里定义一个项目级的约定：所有配置文件都放在 configs 目录下
+CONFIG_DIR = Path("configs")
+
+# 导入 Trainer 时不再需要复杂的 sys.path 操作，因为它应该是一个可安装的包或有正确的 __init__.py
 from trainer.trainer import Trainer
 
 def main(config, task_name):
-    """
-    项目的主训练入口。
-    """
     task_config = config['tasks'][task_name]
     print(f"\n--- 启动训练任务: {task_config['description']} ---")
 
-    # 1. 动态调用数据准备模块
-    print("\n[Step 1/2] 准备数据集...")
-    data_builder_module_name = task_config['data_builder_module']
-    data_builder_func_name = task_config['data_builder_func']
+    # [步骤 1/1] 初始化并启动训练器
+    print("\n[Step 1/1] 初始化并启动训练器...")
     
-    try:
-        module = importlib.import_module(data_builder_module_name)
-        prepare_data_func = getattr(module, data_builder_func_name)
-        prepare_data_func(config)
-    except Exception as e:
-        print(f"❌ 错误: 执行数据准备脚本时失败。")
-        print(f"   - 详情: {e}")
-        return
+    # 【核心修正】路径拼接的逻辑被统一收归于此，健壮且不易出错
+    # 1. 从主配置中获取纯粹的文件名
+    config_filename = task_config['yolo_config_path']
+    # 2. 与我们约定的配置目录进行拼接
+    yolo_config_path = CONFIG_DIR / config_filename
 
-    # 2. 初始化并启动训练器
-    print("\n[Step 2/2] 初始化并启动训练器...")
-    yolo_config_path = task_config['yolo_config_path']
     trainer_instance = Trainer(yolo_config_path)
     trainer_instance.train()
 

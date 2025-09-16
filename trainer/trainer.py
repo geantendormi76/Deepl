@@ -30,35 +30,43 @@ class Trainer:
         # 训练完成后自动调用导出流程
         self.export_model()
 
-    def export_model(self):
+# 文件: trainer/trainer.py
+
+    def export_model(self, model_to_export=None):
         """
-        以“黄金标准”原则导出训练好的最佳模型为ONNX格式。
+        以“黄金标准”原则导出指定的或训练好的最佳模型为ONNX格式。
+        【最终修正】永久禁用 simplify=True 以避免环境兼容性导致的底层崩溃。
         """
-        best_model_path = Path(self.model.trainer.best)
-        print(f"\n🏆 训练出的最佳模型: {best_model_path}")
+        if model_to_export:
+            model = YOLO(model_to_export)
+            print(f"\n🚀 正在导出指定的模型: {model_to_export}")
+        else:
+            model = self.model
+            best_model_path = Path(model.trainer.best)
+            print(f"\n🏆 训练出的最佳模型: {best_model_path}")
         
-        # 确定任务类型以选择导出参数
-        task_type = self.yolo_config.get('task', 'detect') # 默认为检测
+        task_type = self.yolo_config.get('task', 'detect')
         
         if task_type == 'detect':
             print("🚀 正在以【最高兼容性】模式导出检测器模型...")
-            target_name = "yolo_v1_pure_gpu.onnx"
+            target_name = "yolo_v1.onnx"
             export_params = {
                 'format': 'onnx',
                 'opset': 13,         
-                'simplify': True,   
+                'simplify': False,  # 【核心修正】禁用此项
                 'nms': False,       
                 'dynamic': False,     
                 'batch': 1,          
                 'imgsz': self.yolo_config.get('imgsz', 640)
             }
+        # ... (classify 部分保持不变)
         elif task_type == 'classify':
             print("🚀 正在导出分类器模型...")
             target_name = "guaiwu_classifier.onnx"
             export_params = {
                 'format': 'onnx',
                 'opset': 12,
-                'simplify': True,
+                'simplify': False, # 【核心修正】同样禁用
                 'imgsz': self.yolo_config.get('imgsz', 64)
             }
         else:
@@ -66,10 +74,10 @@ class Trainer:
             return
 
         try:
-            onnx_path = self.model.export(**export_params)
+            onnx_path = model.export(**export_params)
             target_onnx_path = Path("saved/models") / target_name
             target_onnx_path.parent.mkdir(parents=True, exist_ok=True)
-            shutil.move(onnx_path, target_onnx_path)
+            shutil.move(str(onnx_path), str(target_onnx_path))
             
             print("\n" + "="*50)
             print("✅ 导出成功！")
@@ -77,3 +85,5 @@ class Trainer:
             print("="*50)
         except Exception as e:
             print(f"\n--- ❌ 导出失败！错误: {e} ---")
+            import traceback
+            traceback.print_exc()

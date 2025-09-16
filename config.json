@@ -3,19 +3,19 @@
   "n_gpu": 1,
   "tasks": {
     "detector": {
-      "description": "训练YOLOv8实体检测器 (定位器)",
-      "yolo_config_path": "configs/yolo/main_config.yaml",
-      "data_builder_module": "data_loader.detector_loader",
-      "data_builder_func": "build_yolo_dataset"
+        "description": "训练YOLOv8实体检测器 (来自真实数据)",
+        "yolo_config_path": "main_config.yaml",
+        "data_builder_module": "data_loader.detector_loader",
+        "data_builder_func": "build_yolo_dataset"
     },
     "classifier": {
-      "description": "训练YOLOv8战斗单位分类器",
-      "yolo_config_path": "configs/yolo_cls/battle_unit_classifier_config.yaml",
+      "description": "训练YOLO11战斗单位分类器",
+      "yolo_config_path": "classifier_config.yaml",
       "data_builder_module": "data_loader.classifier_loader",
       "data_builder_func": "generate_classifier_data"
     },
     "synthetic_generator": {
-      "description": "使用资产库生成YOLOv8检测训练数据",
+      "description": "使用资产库生成YOLO11检测训练数据",
       "data_builder_module": "data_loader.synthetic_data_generator",
       "data_builder_func": "generate_synthetic_dataset",
       "config": {
@@ -26,8 +26,9 @@
     }
   },
   "data_paths": {
-    "detector_source_dir": "data/raw/yolo_v1",
-    "detector_output_dir": "data/processed/locator_dataset",
+    "detector_source_dir": "data/raw/corrected_batch_01",
+    "detector_output_dir": "data/processed/finetune_v2_input",
+
     "classifier_asset_dir": "data/raw/assets_battle_units",
     "classifier_output_dir": "data/processed/battle_units_for_classification",
     

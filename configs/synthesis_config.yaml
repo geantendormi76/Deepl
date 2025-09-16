@@ -1,0 +1,94 @@
+# 文件: configs/synthesis_config.yaml (V2.0 - 高保真战斗布局版)
+
+# --- 1. 核心生成参数 ---
+num_images_to_generate: 10000
+output_image_size: [800, 600]
+
+# --- 2. 战斗单位合成参数 ---
+unit_density:
+  min_enemy_units: 3
+  max_enemy_units: 10 # 敌方单位数量范围
+  # 友方单位固定为1个玩家+1个宠物
+
+# --- 3. 【核心变更】高保真放置黄金法则 (量化) ---
+placement_rules:
+  # 全局约束：单位必须在此多边形内部 (根据您800x600截图估算)
+  valid_polygon:
+    - [45, 250]   # 左上角顶点
+    - [750, 60]   # 右上角顶点
+    - [780, 480]  # 右下角顶点
+    - [100, 580]  # 左下角顶点
+
+  # 战术槽位：定义4x5的阵型
+  formation_slots:
+    enemy_front:
+      - [210, 230]
+      - [280, 200]
+      - [350, 170]
+      - [420, 140]
+      - [490, 110]
+    enemy_back:
+      - [140, 190]
+      - [210, 160]
+      - [280, 130]
+      - [350, 100]
+      - [420, 70]
+    friendly_front: # For pets
+      - [310, 480]
+      - [380, 450]
+      - [450, 420]
+      - [520, 390]
+      - [590, 360]
+    friendly_back:  # For players
+      - [380, 520]
+      - [450, 490]
+      - [520, 460]
+      - [590, 430]
+      - [660, 400]
+  
+  slot_random_offset: 15 # 单位中心点可以在槽位周边15像素内随机浮动
+  overlap_threshold: 0.1 # 单位间允许的IoU重叠率，调低以避免堆叠
+
+# --- 4. 状态指示器 (血条) 关联规则 (保持不变) ---
+healthbar_association:
+  enabled: true
+  probability: 0.95
+  vertical_offset_range: [-20, -12]
+  width_scale_range: [0.8, 1.0]
+
+# --- 5. 【核心升级 V2.5】UI遮挡增强 (高保真UI模拟) ---
+# 文件: configs/synthesis_config.yaml
+
+# --- 5. 【最终高保真版 V3 - ROI锚点】UI遮挡增强 ---
+ui_occlusion:
+  enabled: true
+  probability: 0.4
+  
+  center_placement_offset: { x_stddev: 50, y_stddev: 50 }
+
+  # 【核心修正】坐标现在定义为每个槽位的【左上角】(Top-Left)锚点
+  # 这将消除所有尺寸不一致带来的计算误差，实现完美的高保真布局
+  skill_panel_slots:
+    # 第1行
+    - [18, 37]
+    - [148, 37]
+    # 第2行
+    - [18, 107]
+    - [148, 107]
+    # 第3行
+    - [18, 177]
+    - [148, 177]
+    # 第4行
+    - [18, 247]
+    - [148, 247]
+    # 第5行
+    - [18, 317]
+    - [148, 317]
+
+  num_skills_to_show_range: [4, 10]
+
+# --- 6. 【新增】资产约定 ---
+asset_conventions:
+  # 约定：我们假设所有提取的战斗单位资产，默认都朝向右侧或右下方。
+  # 合成器将根据此约定，自动翻转友方单位以实现对峙效果。
+  default_facing_direction: "right"
