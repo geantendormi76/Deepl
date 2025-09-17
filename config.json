@@ -26,8 +26,8 @@
     }
   },
   "data_paths": {
-    "detector_source_dir": "data/raw/real_data_combined_v1",
-    "detector_output_dir": "data/processed/finetune_v2_input",
+    "detector_source_dir": "data/raw/v1",
+    "detector_output_dir": "data/processed/v1",
 
     "classifier_asset_dir": "data/raw/assets_battle_units",
     "classifier_output_dir": "data/processed/battle_units_for_classification",

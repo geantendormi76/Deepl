@@ -97,6 +97,34 @@ class DataSynthesizer:
             elif key.startswith('1-unit-friendly-pet'): classified_keys['1-unit-friendly-pet'].append(key)
             elif key.startswith('5-skill-player'): classified_keys['5-skill-player'].append(key)
         return classified_keys
+    
+    def _generate_number_image(self, value: int, digit_assets: list) -> np.ndarray:
+        """
+        根据给定的数值，动态生成一个多位数的图像。
+        :param value: 要生成的数字，例如 378
+        :param digit_assets: 包含 0-9 单个数字图像的列表
+        :return: 拼接好的、包含整个数字的 RGBA 图像
+        """
+        s_value = str(value)
+        # 确保我们能正确地根据数字找到对应的图片
+        # 假设 digit_assets[0] 是 0.png, digit_assets[1] 是 1.png ...
+        digit_images = [digit_assets[int(d)] for d in s_value]
+
+        total_width = sum(img.shape[1] for img in digit_images)
+        max_height = max(img.shape[0] for img in digit_images)
+
+        stitched_image = np.zeros((max_height, total_width, 4), dtype=np.uint8)
+
+        current_x = 0
+        for img in digit_images:
+            h, w = img.shape[:2]
+            # 将每个数字画在底部对齐
+            y_offset = max_height - h
+            stitched_image[y_offset:y_offset+h, current_x:current_x+w] = img
+            current_x += w
+            
+        return stitched_image
+
 
     def generate(self):
         # ... (此函数保持 V3.1 版本不变) ...
@@ -207,25 +235,56 @@ class DataSynthesizer:
         self._add_yolo_label_and_events(bg, unit_key, unit_box)
 
     def _add_yolo_label_and_events(self, bg, unit_key, unit_box):
-        # ... (此函数与V3.1版本完全一致) ...
+        # --- 添加单位本身的标签 (逻辑不变) ---
         class_name = unit_key.rsplit('-', 1)[-1]
         if class_name in CLASS_TO_ID: self._add_yolo_label(class_name, unit_box)
+        
+        # --- 关联血条 (逻辑不变) ---
         hb_cfg = self.synth_config['healthbar_association']
         if 'friendly' in unit_key and hb_cfg['enabled'] and random.random() < hb_cfg['probability']:
-            healthbar_asset = random.choice(self.assets['2-status-healthbar-血条'])
-            hb_h, hb_w = healthbar_asset.shape[:2]
-            unit_center_x = (unit_box[0] + unit_box[2]) / 2
-            hb_x = int(unit_center_x - hb_w / 2)
-            hb_y = int(unit_box[1] + hb_cfg['vertical_offset'])
-            bg = paste_foreground(bg, healthbar_asset, (hb_x, hb_y))
-            self._add_yolo_label('血条', (hb_x, hb_y, hb_x + hb_w, hb_y + hb_h))
+            if '2-status-healthbar-血条' in self.assets:
+                healthbar_asset = random.choice(self.assets['2-status-healthbar-血条'])
+                hb_h, hb_w = healthbar_asset.shape[:2]
+                unit_center_x = (unit_box[0] + unit_box[2]) / 2
+                hb_x = int(unit_center_x - hb_w / 2)
+                hb_y = int(unit_box[1] + hb_cfg['vertical_offset'])
+                bg = paste_foreground(bg, healthbar_asset, (hb_x, hb_y))
+                self._add_yolo_label('血条', (hb_x, hb_y, hb_x + hb_w, hb_y + hb_h))
+
+        # --- 【核心升级 V3】关联悬浮数值 (身体中心定位) ---
         num_cfg = self.synth_config['damage_number_association']
-        if '2-status-healthbar-悬浮数值' in self.assets and num_cfg['enabled'] and random.random() < num_cfg['probability']:
-            number_image = random.choice(self.assets['2-status-healthbar-悬浮数值'])
+        if '3-digits-damage' in self.assets and num_cfg['enabled'] and random.random() < num_cfg['probability']:
+            
+            # 1. 按权重生成2、3、4位数 (逻辑不变)
+            num_digits_choices = [2, 3, 4]; weights = [0.3, 0.4, 0.3]
+            chosen_digits = random.choices(num_digits_choices, weights=weights, k=1)[0]
+            if chosen_digits == 2: min_val, max_val = 10, 99
+            elif chosen_digits == 3: min_val, max_val = 100, 999
+            else: min_val, max_val = 1000, 9999
+            value_to_generate = random.randint(min_val, max_val)
+            
+            # 2. 动态生成数值图片 (逻辑不变)
+            number_image = self._generate_number_image(value_to_generate, self.assets['3-digits-damage'])
             num_h, num_w = number_image.shape[:2]
-            unit_center_x = (unit_box[0] + unit_box[2]) / 2
-            num_x = int(unit_center_x - num_w / 2)
-            num_y = int(unit_box[1] + random.randint(*num_cfg['vertical_offset_range']))
+
+            # 3. 【全新定位逻辑】计算单位的中心点和尺寸
+            unit_x1, unit_y1, unit_x2, unit_y2 = unit_box
+            unit_w = unit_x2 - unit_x1
+            unit_h = unit_y2 - unit_y1
+            unit_center_x = unit_x1 + unit_w / 2
+            unit_center_y = unit_y1 + unit_h / 2
+
+            # 4. 【全新定位逻辑】计算数字的粘贴位置
+            #    水平位置：在单位中心左右轻微浮动，看起来更自然
+            horizontal_jitter = unit_w * random.uniform(-0.1, 0.1)
+            num_x = int(unit_center_x - num_w / 2 + horizontal_jitter)
+            
+            #    垂直位置：以单位身体中心为基准，根据配置的 jitter_ratio 进行随机上下浮动
+            jitter_range = (unit_h / 2) * num_cfg.get('body_center_jitter_ratio', 0.4)
+            vertical_jitter = random.uniform(-jitter_range, jitter_range)
+            num_y = int(unit_center_y - num_h / 2 + vertical_jitter)
+
+            # 5. 粘贴并打标签 (逻辑不变)
             bg = paste_foreground(bg, number_image, (num_x, num_y))
             self._add_yolo_label('悬浮数值', (num_x, num_y, num_x + num_w, num_y + num_h))
 

@@ -46,12 +46,11 @@ healthbar_association:
   enabled: true
   probability: 0.95
   vertical_offset: -30 # 固定向上偏移30像素
-
+  body_center_jitter_ratio: 0.4
+  
 damage_number_association:
   enabled: true
   probability: 0.7
-  value_range: [1, 9999] # 1-4位数
-  vertical_offset_range: [-50, -35]
 
 # --- 5. UI遮挡增强 (精确版) ---
 ui_occlusion:

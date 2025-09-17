@@ -2,29 +2,29 @@
 
 # --- 1. 核心训练设置 ---
 # 【核心起点】加载您上一轮用300+真实数据训练出的最强模型！
-model: /home/zhz/deepl/runs/detect/locator_finetune_real_v1/weights/best.pt
+model: /home/zhz/deepl/runs/detect/locator_golden_final_v1/weights/best.pt
 
 # 【核心数据】指向我们刚刚生成的合成数据集。我们将在这个基础上进行数据合并。
 data: /home/zhz/deepl/data/processed/synthetic_locator_dataset/dataset.yaml
 
 # 【调整】数据集很大，给足学习时间，但patience会保护我们
-epochs: 100
-patience: 15
+epochs: 50
+patience: 10
 
 # 【调整】数据集变大，可以适当增加批量大小以加速训练
 batch: 32
 imgsz: 640
 device: 0
 workers: 8
-project: /home/zhz/deepl/runs/detect
+project: /home/zhz/deepl/runs/numbers_v1
 # 【核心】为这次决定性的训练起一个全新的名字！
-name: locator_golden_final_v1
+name: locator_finetune_with_numbers_v1
 exist_ok: True
 
 # --- 2. 优化器与学习率 ---
 optimizer: auto
 # 【核心关键】这仍然是一次微调，使用较低的学习率来“精雕细琢”，而不是“推倒重来”
-lr0: 0.002
+lr0: 0.001
 lrf: 0.01
 momentum: 0.937
 weight_decay: 0.0005
