@@ -50,7 +50,9 @@ healthbar_association:
   
 damage_number_association:
   enabled: true
-  probability: 0.7
+  probability: 0.8
+  heal_probability: 0.3 
+  body_center_jitter_ratio: 0.4
 
 # --- 5. UI遮挡增强 (精确版) ---
 ui_occlusion:

@@ -251,42 +251,55 @@ class DataSynthesizer:
                 bg = paste_foreground(bg, healthbar_asset, (hb_x, hb_y))
                 self._add_yolo_label('血条', (hb_x, hb_y, hb_x + hb_w, hb_y + hb_h))
 
-        # --- 【核心升级 V3】关联悬浮数值 (身体中心定位) ---
+        # --- 【核心升级 V4】关联悬浮数值 (支持伤害与治疗) ---
         num_cfg = self.synth_config['damage_number_association']
-        if '3-digits-damage' in self.assets and num_cfg['enabled'] and random.random() < num_cfg['probability']:
-            
-            # 1. 按权重生成2、3、4位数 (逻辑不变)
-            num_digits_choices = [2, 3, 4]; weights = [0.3, 0.4, 0.3]
-            chosen_digits = random.choices(num_digits_choices, weights=weights, k=1)[0]
-            if chosen_digits == 2: min_val, max_val = 10, 99
-            elif chosen_digits == 3: min_val, max_val = 100, 999
-            else: min_val, max_val = 1000, 9999
-            value_to_generate = random.randint(min_val, max_val)
-            
-            # 2. 动态生成数值图片 (逻辑不变)
-            number_image = self._generate_number_image(value_to_generate, self.assets['3-digits-damage'])
-            num_h, num_w = number_image.shape[:2]
+        # 首先，判断本次是否要生成悬浮数值
+        if not (num_cfg['enabled'] and random.random() < num_cfg['probability']):
+            return # 如果不生成，则提前结束函数
 
-            # 3. 【全新定位逻辑】计算单位的中心点和尺寸
-            unit_x1, unit_y1, unit_x2, unit_y2 = unit_box
-            unit_w = unit_x2 - unit_x1
-            unit_h = unit_y2 - unit_y1
-            unit_center_x = unit_x1 + unit_w / 2
-            unit_center_y = unit_y1 + unit_h / 2
+        # 1. 【新增】根据配置的概率，决定是生成治疗(heal)还是伤害(damage)
+        heal_prob = num_cfg.get('heal_probability', 0.3) # 如果配置里没写，默认30%概率
+        is_heal = random.random() < heal_prob
+        
+        # 根据决定，选择正确的“零件盒”
+        digit_assets = None
+        if is_heal and '3-digits-heal' in self.assets:
+            digit_assets = self.assets['3-digits-heal']
+        elif not is_heal and '3-digits-damage' in self.assets:
+            digit_assets = self.assets['3-digits-damage']
+        
+        # 如果对应的零件盒不存在，则无法继续
+        if digit_assets is None:
+            return
 
-            # 4. 【全新定位逻辑】计算数字的粘贴位置
-            #    水平位置：在单位中心左右轻微浮动，看起来更自然
-            horizontal_jitter = unit_w * random.uniform(-0.1, 0.1)
-            num_x = int(unit_center_x - num_w / 2 + horizontal_jitter)
-            
-            #    垂直位置：以单位身体中心为基准，根据配置的 jitter_ratio 进行随机上下浮动
-            jitter_range = (unit_h / 2) * num_cfg.get('body_center_jitter_ratio', 0.4)
-            vertical_jitter = random.uniform(-jitter_range, jitter_range)
-            num_y = int(unit_center_y - num_h / 2 + vertical_jitter)
+        # 2. 按 3:4:3 权重生成2、3、4位数 (逻辑不变)
+        num_digits_choices = [2, 3, 4]; weights = [0.3, 0.4, 0.3]
+        chosen_digits = random.choices(num_digits_choices, weights=weights, k=1)[0]
+        if chosen_digits == 2: min_val, max_val = 10, 99
+        elif chosen_digits == 3: min_val, max_val = 100, 999
+        else: min_val, max_val = 1000, 9999
+        value_to_generate = random.randint(min_val, max_val)
+        
+        # 3. 动态生成数值图片 (逻辑不变)
+        number_image = self._generate_number_image(value_to_generate, digit_assets)
+        num_h, num_w = number_image.shape[:2]
 
-            # 5. 粘贴并打标签 (逻辑不变)
-            bg = paste_foreground(bg, number_image, (num_x, num_y))
-            self._add_yolo_label('悬浮数值', (num_x, num_y, num_x + num_w, num_y + num_h))
+        # 4. 身体中心定位逻辑 (逻辑不变)
+        unit_x1, unit_y1, unit_x2, unit_y2 = unit_box
+        unit_w = unit_x2 - unit_x1
+        unit_h = unit_y2 - unit_y1
+        unit_center_x = unit_x1 + unit_w / 2
+        unit_center_y = unit_y1 + unit_h / 2
+        horizontal_jitter = unit_w * random.uniform(-0.1, 0.1)
+        num_x = int(unit_center_x - num_w / 2 + horizontal_jitter)
+        jitter_range = (unit_h / 2) * num_cfg.get('body_center_jitter_ratio', 0.4)
+        vertical_jitter = random.uniform(-jitter_range, jitter_range)
+        num_y = int(unit_center_y - num_h / 2 + vertical_jitter)
+
+        # 5. 粘贴并打标签 (逻辑不变)
+        # 无论红色还是绿色，它们的类别都是“悬浮数值”
+        bg = paste_foreground(bg, number_image, (num_x, num_y))
+        self._add_yolo_label('悬浮数值', (num_x, num_y, num_x + num_w, num_y + num_h))
 
     def _apply_ui_occlusion(self, bg, force_skill_key=None):
         # ... (此函数与V3.2版本基本一致, 只是增加了force_skill_key参数) ...

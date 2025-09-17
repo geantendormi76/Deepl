@@ -26,14 +26,14 @@
     }
   },
   "data_paths": {
-    "detector_source_dir": "data/raw/v1",
-    "detector_output_dir": "data/processed/v1",
+    "detector_source_dir": "data/raw/yolov11",
+    "detector_output_dir": "data/processed/yolov11_dataset",
 
     "classifier_asset_dir": "data/raw/assets_battle_units",
     "classifier_output_dir": "data/processed/battle_units_for_classification",
     
     "synthetic_assets_dir": "data/assets/foregrounds",
     "synthetic_backgrounds_dir": "data/assets/backgrounds",
-    "synthetic_output_dir": "data/processed/synthetic_locator_dataset"
+    "synthetic_output_dir": "data/processed/synthetic_dataset"
   }
 }
